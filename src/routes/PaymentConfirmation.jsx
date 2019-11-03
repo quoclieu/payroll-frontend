@@ -1,10 +1,14 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { connect } from 'react-redux';
 import Table from 'react-bootstrap/Table';
 import Button from 'react-bootstrap/Button';
+import Spinner from 'react-bootstrap/Spinner';
+import Alert from 'react-bootstrap/Alert';
 import styled from 'styled-components';
 import axios from 'axios';
 import { withRouter } from 'react-router-dom';
+import { calculateIncomeTax, amountToText } from '../utils/helpers';
+import TableRow from '../components/TableRow';
 
 const Container = styled.div`
   margin-top: 80px;
@@ -29,41 +33,20 @@ const ButtonContainer = styled.div`
   width: 100%;
 `;
 
-const calculateIncomeTax = salary => {
-  let initialTaxAmount = 0;
-  let taxOverRate = 0;
-  let threshold = 0;
-  if (salary <= 18200) {
-    return 0;
-  } else if (salary >= 18201 && salary <= 37000) {
-    initialTaxAmount = 0;
-    taxOverRate = 0.19;
-    threshold = 18200;
-  } else if (salary >= 37001 && salary <= 80000) {
-    initialTaxAmount = 3572;
-    taxOverRate = 0.325;
-    threshold = 37000;
-  } else if (salary >= 80001 && salary <= 180000) {
-    initialTaxAmount = 17547;
-    taxOverRate = 0.37;
-    threshold = 80000;
-  } else if (salary >= 180001) {
-    initialTaxAmount = 54547;
-    taxOverRate = 0.45;
-    threshold = 180000;
-  }
-  return Math.round(
-    (initialTaxAmount + taxOverRate * (salary - threshold)) / 12
-  );
-};
+const StyledAlert = styled(Alert)`
+  margin-top: 20px;
+  width: 100%;
+`;
 
-const amountToText = amount => {
-  let text = amount.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-  return `$ ${text}.00`;
-};
+const StyledButton = styled(Button)`
+  width: 90px;
+`;
 
 const PaymentConfirmation = props => {
   const { firstName, lastName, salary, superRate } = props.employeeInfo;
+  const [isLoading, setLoading] = useState(false);
+  const [message, setMessage] = useState('');
+  const [isSuccess, setIsSuccess] = useState(false);
 
   const grossIncome = Math.round(salary / 12);
   const superAmount = Math.round((grossIncome * superRate) / 100);
@@ -72,9 +55,9 @@ const PaymentConfirmation = props => {
   const pay = netIncome - superAmount;
 
   const handlePayBtn = () => {
-    const url = '123';
+    const url = 'http://localhost:8000/pay';
     const date = new Date();
-    axios.post(url, {
+    const data = {
       day: date.getDate(),
       month: date.getMonth(),
       year: date.getFullYear(),
@@ -86,7 +69,29 @@ const PaymentConfirmation = props => {
       incomeTax,
       netIncome,
       pay
-    });
+    };
+    console.log(data);
+    setLoading(true);
+    axios({
+      url,
+      method: 'post',
+      data
+    })
+      .then(res => {
+        setLoading(false);
+        if (res.data.error) {
+          setMessage(res.data.error);
+          setIsSuccess(false);
+        } else {
+          setIsSuccess(true);
+          setMessage('Employee Paid Successfully!');
+        }
+      })
+      .catch(() => {
+        setLoading(false);
+        setMessage('Error occured.');
+        setIsSuccess(false);
+      });
   };
 
   return (
@@ -98,72 +103,47 @@ const PaymentConfirmation = props => {
         </h3>
         <StyledTable striped>
           <tbody>
-            <tr>
-              <td>
-                <strong>Pay Date</strong>
-              </td>
-              <td>{new Date().toString().slice(3, 16)}</td>
-            </tr>
-            <tr>
-              <td>
-                <strong>Pay Frequency</strong>
-              </td>
-              <td>Monthly</td>
-            </tr>
-            <tr>
-              <td>
-                <strong>Annual Income</strong>
-              </td>
-              <td>{amountToText(salary)}</td>
-            </tr>
-            <tr>
-              <td>
-                <strong>Gross Income</strong>
-              </td>
-              <td>{amountToText(grossIncome)}</td>
-            </tr>
-            <tr>
-              <td>
-                <strong>Income Tax</strong>
-              </td>
-              <td>{amountToText(incomeTax)}</td>
-            </tr>
-            <tr>
-              <td>
-                <strong>Net Income</strong>
-              </td>
-              <td>{amountToText(netIncome)}</td>
-            </tr>
-            <tr>
-              <td>
-                <strong>Super</strong>
-              </td>
-              <td>{amountToText(superAmount)}</td>
-            </tr>
-            <tr>
-              <td>
-                <strong>Pay</strong>
-              </td>
-              <td>{amountToText(pay)}</td>
-            </tr>
+            <TableRow
+              title="Pay Date"
+              value={new Date().toString().slice(3, 16)}
+            />
+            <TableRow title="Pay Frequency" value="Monthly" />
+            <TableRow title="Annual Income" value={amountToText(salary)} />
+            <TableRow title="Gross Income" value={amountToText(grossIncome)} />
+            <TableRow title="Income Tax" value={amountToText(incomeTax)} />
+            <TableRow title="Net Income" value={amountToText(netIncome)} />
+            <TableRow title="Super" value={amountToText(superAmount)} />
+            <TableRow title="Pay" value={amountToText(pay)} />
           </tbody>
         </StyledTable>
-        <ButtonContainer>
-          <Button
-            variant="danger"
-            onClick={() => props.history.push('')}
-            style={{ width: 80 }}
-          >
-            Cancel
-          </Button>
-          <Button
-            variant="primary"
-            onClick={handlePayBtn}
-            style={{ width: 80 }}
-          >
-            Pay
-          </Button>
-        </ButtonContainer>
+        {isLoading ? (
+          <Spinner animation="border" variant="primary" />
+        ) : (
+          <>
+            <ButtonContainer>
+              <StyledButton
+                variant="danger"
+                onClick={() => props.history.push('')}
+                style={{ width: 80 }}
+              >
+                {isSuccess ? 'Back' : 'Cancel'}
+              </StyledButton>
+              <StyledButton
+                variant="primary"
+                onClick={handlePayBtn}
+                style={{ width: 80 }}
+              >
+                Pay
+              </StyledButton>
+            </ButtonContainer>
+          </>
+        )}
+
+        {message && (
+          <StyledAlert variant={isSuccess ? 'success' : 'danger'}>
+            {message}
+          </StyledAlert>
+        )}
       </InnerContainer>
     </Container>
   );

@@ -3,10 +3,10 @@ import { STORE_INFO } from '../actions';
 
 const employeeInfoReducer = (
   data = {
-    firstName: 'John',
-    lastName: 'Smith',
-    salary: 60050,
-    superRate: 9
+    firstName: '',
+    lastName: '',
+    salary: '',
+    superRate: ''
   },
   action
 ) => {

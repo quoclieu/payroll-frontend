@@ -47,14 +47,24 @@ const GeneratePayslip = props => {
         <h2>Employee Info</h2>
         <Row>
           <Form.Group as={Col} controlId="firstName">
-            <Form.Control required type="text" placeholder="First Name" />
+            <Form.Control
+              required
+              type="text"
+              placeholder="First Name"
+              defaultValue={props.employeeInfo.firstName}
+            />
             <Form.Control.Feedback type="invalid">
               Please enter first name.
             </Form.Control.Feedback>
           </Form.Group>
 
           <Form.Group as={Col} controlId="lastName">
-            <Form.Control required type="text" placeholder="Last Name" />
+            <Form.Control
+              required
+              type="text"
+              placeholder="Last Name"
+              defaultValue={props.employeeInfo.lastName}
+            />
             <Form.Control.Feedback type="invalid">
               Please enter last name.
             </Form.Control.Feedback>
@@ -67,7 +77,12 @@ const GeneratePayslip = props => {
               <InputGroup.Prepend>
                 <InputGroup.Text>$</InputGroup.Text>
               </InputGroup.Prepend>
-              <Form.Control required type="text" placeholder="Annual Salary" />
+              <Form.Control
+                required
+                type="text"
+                placeholder="Annual Salary"
+                defaultValue={props.employeeInfo.salary}
+              />
               <InputGroup.Append>
                 <InputGroup.Text>.00</InputGroup.Text>
               </InputGroup.Append>
@@ -87,6 +102,7 @@ const GeneratePayslip = props => {
                 required
                 type="text"
                 placeholder="Super Rate eg. 10"
+                defaultValue={props.employeeInfo.superRate}
               />
               <Form.Control.Feedback type="invalid">
                 Please enter super rate.
@@ -103,9 +119,13 @@ const GeneratePayslip = props => {
   );
 };
 
+const mapStateToProps = state => {
+  return { employeeInfo: state.employeeInfo };
+};
+
 export default withRouter(
   connect(
-    null,
+    mapStateToProps,
     { storeEmployeeInfo }
   )(GeneratePayslip)
 );
